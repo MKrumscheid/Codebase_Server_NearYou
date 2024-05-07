@@ -46,7 +46,7 @@ const Coupon = sequelize.define("Coupon", {
     allowNull: false,
   },
   validity: {
-    type: DataTypes.DATE,
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   creator: {

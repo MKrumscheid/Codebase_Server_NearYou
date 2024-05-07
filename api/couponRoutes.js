@@ -53,11 +53,10 @@ const validateCoupon = [
     .isFloat({ min: 0, max: 100 })
     .withMessage("Discount must be a valid number greater than or equal to 0"),
   check("validity")
-    .isISO8601()
-    .withMessage("Validity must be a valid date in ISO 8601 format"),
-  check("expiration")
-    .isISO8601()
-    .withMessage("Expiration must be a valid date in ISO 8601 format"),
+    .isInt({ min: 30 })
+    .withMessage(
+      "Validity must be a valid positive integer greater than 30 minutes"
+    ),
   check("latitude")
     .isFloat({ min: -90, max: 90 })
     .withMessage("Latitude must be between -90 and 90"),

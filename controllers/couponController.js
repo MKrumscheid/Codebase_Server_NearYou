@@ -93,7 +93,6 @@ exports.createCoupon = async (req, res) => {
       productInfo,
       latitude,
       longitude,
-      expiration,
       quantity,
     } = req.body;
     const productPhoto = req.files?.productPhoto
@@ -108,7 +107,7 @@ exports.createCoupon = async (req, res) => {
         productPhoto,
         companyLogo,
         productCategory,
-        validity,
+        validity, //this is the time in minutes the coupon is valid
         creator,
         price,
         quantity,
@@ -116,7 +115,7 @@ exports.createCoupon = async (req, res) => {
         discount,
         productInfo,
         location: sequelize.fn("ST_MakePoint", longitude, latitude),
-        expiration,
+        expiration: new Date(new Date().getTime() + 24 * 60 * 60000), //expiration date is 24 hours from time of creation for testing purposes
       },
       { transaction }
     );
