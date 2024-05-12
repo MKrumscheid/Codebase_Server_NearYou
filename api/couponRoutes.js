@@ -24,7 +24,16 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({ storage: storage, fileFilter: fileFilter }).fields([
+// Setting limits: 2MB file size
+const limits = {
+  fileSize: 2 * 1024 * 1024,
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: limits,
+}).fields([
   { name: "productPhoto", maxCount: 1 },
   { name: "companyLogo", maxCount: 1 },
 ]);
@@ -46,6 +55,13 @@ const validateCoupon = [
   check("price")
     .isFloat({ min: 0 })
     .withMessage("Price must be a valid number greater than or equal to 0"),
+  check("product").isString().withMessage("Product must be a valid string"),
+  check("productCategory")
+    .isString()
+    .withMessage("Product category must be a valid string"),
+  check("productInfo")
+    .isString()
+    .withMessage("Product info must be a valid string"),
   check("quantity")
     .isInt({ min: 1 })
     .withMessage("Quantity must be a valid integer greater than or equal to 1"),
@@ -92,7 +108,20 @@ const validateNearbyCoupon = [
 ];
 
 // Routes for coupon operations using the validation and Multer middleware for file upload
-router.post("/", [upload, validateCoupon], couponController.createCoupon);
+router.post(
+  "/",
+  [upload, validateCoupon, couponController.createCoupon],
+  function (err, req, res, next) {
+    if (err instanceof multer.MulterError) {
+      return res.status(500).json({
+        message: "Multer error: " + err.message,
+      });
+    } else if (err) {
+      return res.status(500).json({ message: "Error: " + err.message });
+    }
+  }
+);
+
 router.put(
   "/:id",
   [upload, ...validateId, ...validateCoupon],

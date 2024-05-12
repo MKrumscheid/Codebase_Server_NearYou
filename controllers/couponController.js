@@ -60,14 +60,18 @@ async function fetchAndReturnNearbyCoupons(
     });
   }
 
-  //await handleExpiredCoupons(transaction);  removed for testing purposes
+  await handleExpiredCoupons(transaction);
 
   try {
     const coupons = await Coupon.findAll({
       where: sequelize.where(
         sequelize.fn(
-          "ST_Distance_Sphere",
-          sequelize.literal(`POINT(${longitude}, ${latitude})`),
+          "ST_DistanceSphere",
+          sequelize.fn(
+            "ST_SetSRID",
+            sequelize.fn("ST_MakePoint", longitude, latitude),
+            4326
+          ),
           sequelize.col("location")
         ),
         { [Op.lte]: parseInt(distance) }
@@ -76,14 +80,16 @@ async function fetchAndReturnNearbyCoupons(
     });
     res.send(coupons);
   } catch (error) {
+    console.error("Error finding coupons:", error);
     res.status(500).send({ message: "Error finding coupons", error });
   }
 }
 
 // Controller methods with transactions
-exports.createCoupon = async (req, res) => {
+exports.createCoupon = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
+    console.log(req.body.jsonData);
     const {
       productCategory,
       validity,
@@ -93,11 +99,12 @@ exports.createCoupon = async (req, res) => {
       productInfo,
       latitude,
       longitude,
+      product,
       quantity,
     } = req.body;
     const productPhoto = req.files?.productPhoto
       ? req.files.productPhoto[0].path
-      : null; //maybe use a placeholder image if no image is uploaded instead of null
+      : null;
     const companyLogo = req.files?.companyLogo
       ? req.files.companyLogo[0].path
       : null;
@@ -107,40 +114,38 @@ exports.createCoupon = async (req, res) => {
         productPhoto,
         companyLogo,
         productCategory,
-        validity, //this is the time in minutes the coupon is valid
+        validity,
         creator,
+        product,
         price,
         quantity,
-        new_price: price - (price * discount) / 100, // Calculate new price based on discount (if available)
+        new_price: price - (price * discount) / 100,
         discount,
         productInfo,
         location: sequelize.fn("ST_MakePoint", longitude, latitude),
-        expiration: new Date(new Date().getTime() + 24 * 60 * 60000), //expiration date is 24 hours from time of creation for testing purposes
+        expiration: new Date(new Date().getTime() + 24 * 60 * 60000),
       },
       { transaction }
     );
 
-    /*  await fetchAndReturnNearbyCoupons(
-      res,
-      latitude,
-      longitude,
-      req.body.distance || 500,
-      transaction
-    );
-*/
     await transaction.commit();
-
     res
       .status(201)
-      .send({ message: `Created Coupon with ID ${newCoupon.id} sucessfully` });
+      .send({ message: `Created Coupon with ID ${newCoupon.id} successfully` });
   } catch (error) {
-    await transaction.rollback();
+    if (transaction.finished !== "commit") {
+      // Rollback only if the transaction hasn't been committed
+      await transaction.rollback();
+    }
+    console.error("Error during coupon creation: ", error);
+    next(error); //pass the error to the error handler middleware (multer error handler in this case)
     res
-      .status(400)
-      .send({ message: "Error creating coupon", error: error.message });
+      .status(500)
+      .send({ message: "Error creating coupon", error: error.toString() });
   }
 };
 
+//probably never being used...but here we go
 exports.updateCoupon = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
@@ -151,12 +156,13 @@ exports.updateCoupon = async (req, res) => {
       creator,
       price,
       discount,
+      product,
       productInfo,
       latitude,
       longitude,
       expiration,
       quantity,
-    } = req.body;
+    } = req.body.jsonData;
     const productPhoto = req.files?.productPhoto
       ? req.files.productPhoto[0].path
       : null; //maybe use a placeholder image if no image is uploaded instead of null
@@ -170,6 +176,7 @@ exports.updateCoupon = async (req, res) => {
       creator,
       price,
       quantity,
+      product,
       new_price: price - (price * discount) / 100,
       discount,
       productInfo,
@@ -177,7 +184,7 @@ exports.updateCoupon = async (req, res) => {
       expiration,
     };
 
-    // Only update image paths if new images were uploaded
+    // Only update image paths if new images were uploaded (not strictly speaking a PUT request anymore, but trying to avoid sending the images if it isnt necessary)
     if (productPhoto) updatedFields.productPhoto = productPhoto;
     if (companyLogo) updatedFields.companyLogo = companyLogo;
 
@@ -190,14 +197,6 @@ exports.updateCoupon = async (req, res) => {
       return res.status(404).send({ message: "Coupon not found" });
     }
 
-    /*await fetchAndReturnNearbyCoupons(
-      res,
-      latitude,
-      longitude,
-      req.body.distance || 500,
-      transaction
-    );
-*/
     await transaction.commit();
     res.send({ message: "Coupon updated successfully" });
   } catch (error) {
@@ -208,6 +207,7 @@ exports.updateCoupon = async (req, res) => {
   }
 };
 
+// also never really used, since we dont have a user authentification and anyone would be able to delete any coupon, just to show of we can do it
 exports.deleteCoupon = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
@@ -229,6 +229,7 @@ exports.deleteCoupon = async (req, res) => {
   }
 };
 
+// maybe also use patch in case a coupon got sent  back from a client after its validation ran out. Use req.route.path to check route path
 exports.patchCoupon = async (req, res) => {
   //patch is only used to update the quantity of a coupon!
   const t = await sequelize.transaction();
@@ -236,12 +237,7 @@ exports.patchCoupon = async (req, res) => {
     const coupon = await Coupon.findByPk(req.params.id, { transaction: t });
     if (!coupon) {
       await t.rollback();
-      return res.status(404).send({ message: "Coupon not found" });
-    }
-
-    if (coupon.quantity < 1) {
-      await t.rollback();
-      return res.status(400).send({ message: "No coupons left to claim" });
+      return res.status(404).send({ message: "No coupons left to claim" });
     }
 
     // Check if it's the last coupon

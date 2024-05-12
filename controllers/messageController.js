@@ -1,6 +1,7 @@
-const { Message } = require("../models/Message");
-const sequelize = require("sequelize");
-const { Op } = sequelize;
+const Message = require("../models/Message");
+const { Sequelize, DataTypes } = require("sequelize");
+const Op = Sequelize.Op;
+const sequelize = require("../config/database");
 
 // Remove expired messages
 const handleExpiredMessages = async (transaction) => {
@@ -13,9 +14,10 @@ const handleExpiredMessages = async (transaction) => {
 };
 
 exports.createMessage = async (req, res) => {
-  const transaction = await sequelize.Transaction();
+  const transaction = await sequelize.transaction();
   try {
     const { content, latitude, longitude } = req.body;
+    console.log(content, latitude, longitude);
     const newMessage = await Message.create(
       {
         content: content,
@@ -29,12 +31,10 @@ exports.createMessage = async (req, res) => {
     res.status(201).json(newMessage);
   } catch (error) {
     await transaction.rollback();
-    res
-      .status(500)
-      .json({
-        message: "Fehler beim Erstellen der Nachricht",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Fehler beim Erstellen der Nachricht",
+      error: error.message,
+    });
   }
 };
 
@@ -47,8 +47,12 @@ exports.findNearbyMessages = async (req, res) => {
     const messages = await Message.findAll({
       where: sequelize.where(
         sequelize.fn(
-          "ST_Distance_Sphere",
-          sequelize.literal(`POINT(${longitude}, ${latitude})`),
+          "ST_DistanceSphere",
+          sequelize.fn(
+            "ST_SetSRID",
+            sequelize.fn("ST_MakePoint", longitude, latitude),
+            4326
+          ),
           sequelize.col("location")
         ),
         { [Op.lte]: 300 } //messages shall always have a reach of 300 meters for this implementation. lte = less than or equal
@@ -60,11 +64,9 @@ exports.findNearbyMessages = async (req, res) => {
     res.json(messages);
   } catch (error) {
     await transaction.rollback();
-    res
-      .status(500)
-      .json({
-        message: "Fehler beim finden von Nachrichten in der Nähe",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Fehler beim finden von Nachrichten in der Nähe",
+      error: error.message,
+    });
   }
 };

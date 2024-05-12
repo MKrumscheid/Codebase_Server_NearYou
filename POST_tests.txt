@@ -1,0 +1,15 @@
+ {
+  "productCategory" : "Kleidung",
+      "validity" : 100,
+      "creator" : "H&M",
+      "price" : 50,
+      "discount" : 10,
+      "latitude" : -12.543564,
+      "longitude" : 34.467376,
+      "productInfo" : "Morgen schon wieder out of fashion",
+      "product" : "Jeans",
+      "quantity" : 5,
+      "distance" : 5000
+ }
+
+productCategory="Kleidung"&validity=100&creator="HundM"&price=50&discount=10&latitude=-12.543564&longitude=34.467376&productInfo="Morgen schon wieder out of fashion"&product="Jeans"&quantity=5&distance=5000 

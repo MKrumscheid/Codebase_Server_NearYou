@@ -5,12 +5,13 @@ const messageRoutes = require("./api/messageRoutes");
 const { setupDatabase } = require("./models/index");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // Middleware
 app.use(express.json());
 //For testing purposes, we allow all origins
 app.use(cors());
+app.use("/uploads", express.static("uploads"));
 
 // Routes
 app.use("/api/coupons", couponRoutes);

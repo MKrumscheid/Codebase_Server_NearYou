@@ -53,6 +53,10 @@ const Coupon = sequelize.define("Coupon", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  product: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   price: {
     type: DataTypes.FLOAT,
     allowNull: false,
