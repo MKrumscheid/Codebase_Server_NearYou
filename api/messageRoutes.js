@@ -3,6 +3,7 @@ const router = express.Router();
 const { check, validationResult } = require("express-validator");
 const messageController = require("../controllers/messageController");
 
+// Middleware to validate message data
 const validateMessage = [
   check("content").not().isEmpty().withMessage("Inhalt darf nicht leer sein"),
   check("latitude")

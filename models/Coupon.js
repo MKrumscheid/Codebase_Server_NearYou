@@ -1,6 +1,7 @@
 const { DataTypes, Sequelize } = require("sequelize");
 const sequelize = require("../config/database");
 
+//setting up the Coupon model for the database
 const Coupon = sequelize.define("Coupon", {
   id: {
     type: DataTypes.INTEGER,
@@ -51,7 +52,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   creator: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true, //for now thats fine, but later we should make it mandatory
   },
   product: {
     type: DataTypes.STRING,
@@ -67,7 +68,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   new_price: {
     type: DataTypes.FLOAT,
-    allowNull: true, // New price may be mandatory
+    allowNull: true,
     validate: {
       isFloat: true,
       min: 0,
@@ -75,7 +76,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   discount: {
     type: DataTypes.FLOAT,
-    allowNull: true, // Discounts are  mandatory
+    allowNull: true,
     validate: {
       isFloat: true,
       min: 0,
@@ -83,7 +84,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   productInfo: {
     type: DataTypes.STRING,
-    allowNull: true, // Additional product information may be mandatory
+    allowNull: true,
   },
   location: {
     type: DataTypes.GEOMETRY("POINT"),

@@ -3,6 +3,7 @@ const multer = require("multer");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
 
+// Create a new router instance for coupon routes
 const router = express.Router();
 
 // Configure storage and file filter for Multer
@@ -10,12 +11,13 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
   },
+  // Rename the file to include the fieldname and the current date so we have unique filenames
   filename: (req, file, cb) => {
     const extension = file.originalname.split(".").pop();
     cb(null, `${file.fieldname}-${Date.now()}.${extension}`);
   },
 });
-
+// File filter to only allow JPEG and PNG files
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
     cb(null, true);
@@ -28,7 +30,7 @@ const fileFilter = (req, file, cb) => {
 const limits = {
   fileSize: 2 * 1024 * 1024,
 };
-
+// Multer middleware for file upload
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,

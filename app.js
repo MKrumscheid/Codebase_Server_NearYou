@@ -11,6 +11,7 @@ const PORT = 3000;
 app.use(express.json());
 //For testing purposes, we allow all origins
 app.use(cors());
+//since we do not save images in the DB for performance reasons, we set up a static route for the images
 app.use("/uploads", express.static("uploads"));
 
 // Routes

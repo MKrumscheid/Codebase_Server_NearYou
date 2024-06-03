@@ -47,15 +47,15 @@ exports.findNearbyMessages = async (req, res) => {
     const messages = await Message.findAll({
       where: sequelize.where(
         sequelize.fn(
-          "ST_DistanceSphere",
+          "ST_DistanceSphere", //postGIS function to calculate the distance between two points
           sequelize.fn(
-            "ST_SetSRID",
-            sequelize.fn("ST_MakePoint", longitude, latitude),
+            "ST_SetSRID", //postGIS function to set the SRID (Spatial Reference System Identifier) of a geometry (point in this case) to a specific value
+            sequelize.fn("ST_MakePoint", longitude, latitude), //postGIS function to create a point from longitude and latitude
             4326
           ),
-          sequelize.col("location")
+          sequelize.col("location") //compare the point to the location column of the Message table
         ),
-        { [Op.lte]: 300 } //messages shall always have a reach of 300 meters for this implementation. lte = less than or equal
+        { [Op.lte]: 500 } //messages shall always have a reach of 500 meters for this implementation. lte = less than or equal
       ),
       transaction,
     });

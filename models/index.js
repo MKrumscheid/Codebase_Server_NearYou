@@ -5,9 +5,10 @@ const Message = require("./Message");
 // Check and sync all models
 const setupDatabase = async () => {
   try {
+    // Sync all models with the database at startup
     await sequelize.sync({ force: false });
     sequelize
-      .authenticate()
+      .authenticate() // Test the connection
       .then(() => {
         console.log("Connection has been established successfully.");
       })

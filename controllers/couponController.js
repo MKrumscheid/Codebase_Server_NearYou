@@ -16,7 +16,7 @@ function isValidDistance(distance) {
   return distance >= 50 && distance <= 5000;
 }
 
-// Remove expired coupons
+// Remove expired coupons. For now expiration is hardcoded to be 24 hours after creation
 const handleExpiredCoupons = async (transaction) => {
   await Coupon.destroy({
     where: {
@@ -26,6 +26,7 @@ const handleExpiredCoupons = async (transaction) => {
   });
 };
 
+//Method to get a coupon by its ID
 exports.getCouponByID = async (req, res) => {
   try {
     const coupon = await Coupon.findByPk(req.params.id);
@@ -41,7 +42,7 @@ exports.getCouponByID = async (req, res) => {
   }
 };
 
-// Fetch and return nearby coupons
+// fetching all the coupons within the user specified distance. Not exported because only used internally
 async function fetchAndReturnNearbyCoupons(
   res,
   latitude,
@@ -59,22 +60,23 @@ async function fetchAndReturnNearbyCoupons(
         "Invalid input parameters. Please check your position and distance data.",
     });
   }
-
+  //cleaning DB from expired coupons
   await handleExpiredCoupons(transaction);
 
   try {
+    // Find all coupons within the specified distance via the ST_DistanceSphere function of PostGIS
     const coupons = await Coupon.findAll({
       where: sequelize.where(
         sequelize.fn(
           "ST_DistanceSphere",
           sequelize.fn(
-            "ST_SetSRID",
-            sequelize.fn("ST_MakePoint", longitude, latitude),
+            "ST_SetSRID", // Set the SRID (Spatial Reference Identifier) to 4326 (WGS 84), which is the standard for GPS coordinates
+            sequelize.fn("ST_MakePoint", longitude, latitude), //convert the longitude and latitude to a point
             4326
           ),
-          sequelize.col("location")
+          sequelize.col("location") //compare the point to the location column of the Coupon table
         ),
-        { [Op.lte]: parseInt(distance) }
+        { [Op.lte]: parseInt(distance) } //less than or equal (lte) to the distance
       ),
       transaction,
     });
@@ -85,11 +87,11 @@ async function fetchAndReturnNearbyCoupons(
   }
 }
 
-// Controller methods with transactions
+//Method to extract the information from a multipart form, calculate necesarry new attributes and create a new coupon
 exports.createCoupon = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
-    console.log(req.body.jsonData);
+    console.log(req.body.jsonData); //for debugging purposes
     const {
       productCategory,
       validity,
@@ -101,14 +103,15 @@ exports.createCoupon = async (req, res, next) => {
       longitude,
       product,
       quantity,
-    } = req.body;
-    const productPhoto = req.files?.productPhoto
+    } = req.body; //destructure the body of the request
+    const productPhoto = req.files?.productPhoto //check if there is a file in the request
       ? req.files.productPhoto[0].path
-      : null;
+      : null; //for now we allow no image to be uploaded, but later we should use a placeholder image, which's path would be here instead of null
     const companyLogo = req.files?.companyLogo
       ? req.files.companyLogo[0].path
       : null;
 
+    // Create the new coupon in the database
     const newCoupon = await Coupon.create(
       {
         productPhoto,
@@ -122,7 +125,7 @@ exports.createCoupon = async (req, res, next) => {
         new_price: price - (price * discount) / 100,
         discount,
         productInfo,
-        location: sequelize.fn("ST_MakePoint", longitude, latitude),
+        location: sequelize.fn("ST_MakePoint", longitude, latitude), //create a point from the longitude and latitude via the ST_MakePoint function of PostGIS function from PostGIS
         expiration: new Date(new Date().getTime() + 24 * 60 * 60000),
       },
       { transaction }
@@ -165,7 +168,7 @@ exports.updateCoupon = async (req, res) => {
     } = req.body.jsonData;
     const productPhoto = req.files?.productPhoto
       ? req.files.productPhoto[0].path
-      : null; //maybe use a placeholder image if no image is uploaded instead of null
+      : null;
     const companyLogo = req.files?.companyLogo
       ? req.files.companyLogo[0].path
       : null;
@@ -240,7 +243,7 @@ exports.patchCoupon = async (req, res) => {
       return res.status(404).send({ message: "No coupons left to claim" });
     }
 
-    // Check if it's the last coupon
+    // Check if it's the last coupon. In the future we wont delete the coupon, rather we let it stay at 0 and filter them out in fetchAndReturnNearbyCoupons, so we can patch them to +1 if a cooupon is not claimed after all but the quantity is already 0
     if (coupon.quantity === 1) {
       await coupon.destroy({ transaction: t });
     } else {
