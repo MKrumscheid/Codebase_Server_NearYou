@@ -93,7 +93,6 @@ exports.createCoupon = async (req, res, next) => {
     const {
       productCategory,
       validity,
-      creator,
       price,
       discount,
       productInfo,
@@ -115,7 +114,6 @@ exports.createCoupon = async (req, res, next) => {
         companyLogo,
         productCategory,
         validity,
-        creator,
         product,
         price,
         quantity,
@@ -153,7 +151,6 @@ exports.updateCoupon = async (req, res) => {
       id,
       productCategory,
       validity,
-      creator,
       price,
       discount,
       product,
@@ -173,7 +170,6 @@ exports.updateCoupon = async (req, res) => {
     const updatedFields = {
       productCategory,
       validity,
-      creator,
       price,
       quantity,
       product,

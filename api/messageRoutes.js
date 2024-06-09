@@ -31,7 +31,7 @@ const validateMessageId = [
   },
 ];
 
-router.get("/nearby", validateMessage, messageController.findNearbyMessages);
+router.get("/nearby", messageController.findNearbyMessages);
 router.post("/", validateMessage, messageController.createMessage);
 
 //router.delete("/:id", validateMessageId, messageController.deleteMessage); since we dont have a user authentification, we dont allow users to delete messages

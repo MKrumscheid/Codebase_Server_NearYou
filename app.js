@@ -11,7 +11,7 @@ const PORT = 3000;
 app.use(express.json());
 //For testing purposes, we allow all origins
 app.use(cors());
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static("uploads")); //to acces the uploaded images on the server under the /uploads path
 
 // Routes
 app.use("/api/coupons", couponRoutes);

@@ -55,7 +55,7 @@ exports.findNearbyMessages = async (req, res) => {
           ),
           sequelize.col("location")
         ),
-        { [Op.lte]: 300 } //messages shall always have a reach of 300 meters for this implementation. lte = less than or equal
+        { [Op.lte]: 1000 } //messages shall always have a reach of 300 meters for this implementation. lte = less than or equal
       ),
       transaction,
     });

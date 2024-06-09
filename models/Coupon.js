@@ -49,10 +49,10 @@ const Coupon = sequelize.define("Coupon", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  creator: {
+  /* creator: {
     type: DataTypes.STRING,
-    allowNull: false,
-  },
+    allowNull: true,
+  },*/
   product: {
     type: DataTypes.STRING,
     allowNull: false,
