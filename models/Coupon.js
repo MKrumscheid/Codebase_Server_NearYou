@@ -17,7 +17,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   productPhoto: {
     type: DataTypes.STRING,
-    allowNull: true, // Product photo may be mandatory
+    allowNull: true,
     validate: {
       isFilePath(value) {
         if (value && !value.match(/(\.jpg|\.jpeg|\.png)$/i)) {
@@ -30,7 +30,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   companyLogo: {
     type: DataTypes.STRING,
-    allowNull: true, // Company logo may be mandatory
+    allowNull: true,
     validate: {
       isFilePath(value) {
         if (value && !value.match(/(\.jpg|\.jpeg|\.png)$/i)) {
@@ -49,6 +49,7 @@ const Coupon = sequelize.define("Coupon", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  //Took out creator since there was not enough space with in the coupon when displayed.
   /* creator: {
     type: DataTypes.STRING,
     allowNull: true,
@@ -67,7 +68,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   new_price: {
     type: DataTypes.FLOAT,
-    allowNull: true, // New price may be mandatory
+    allowNull: true,
     validate: {
       isFloat: true,
       min: 0,
@@ -75,7 +76,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   discount: {
     type: DataTypes.FLOAT,
-    allowNull: true, // Discounts are  mandatory
+    allowNull: true,
     validate: {
       isFloat: true,
       min: 0,
@@ -83,7 +84,7 @@ const Coupon = sequelize.define("Coupon", {
   },
   productInfo: {
     type: DataTypes.STRING,
-    allowNull: true, // Additional product information may be mandatory
+    allowNull: true,
   },
   location: {
     type: DataTypes.GEOMETRY("POINT"),

@@ -21,17 +21,6 @@ const validateMessage = [
   },
 ];
 
-const validateMessageId = [
-  check("id").isInt().withMessage("ID muss eine gültige Ganzzahl sein"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-  },
-];
-
 router.get("/nearby", messageController.findNearbyMessages);
 router.post("/", validateMessage, messageController.createMessage);
 

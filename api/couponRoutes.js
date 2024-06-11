@@ -71,7 +71,7 @@ const validateCoupon = [
     .isFloat({ min: 0, max: 100 })
     .withMessage("Discount must be a valid number greater than or equal to 0"),
   check("validity")
-    .isInt({ min: 30 })
+    .isInt({ min: 10 })
     .withMessage(
       "Validity must be a valid positive integer greater than 30 minutes"
     ),
@@ -113,7 +113,7 @@ const validateNearbyCoupon = [
 router.post(
   "/",
   [upload, validateCoupon, couponController.createCoupon],
-  function (err, req, res, next) {
+  function (err, res) {
     if (err instanceof multer.MulterError) {
       return res.status(500).json({
         message: "Multer error: " + err.message,
@@ -130,11 +130,9 @@ router.put(
   couponController.updateCoupon
 );
 
-//Routes for coupon operations without file upload
 router.get("/nearby", validateNearbyCoupon, couponController.findNearbyCoupons);
 router.get("/:id", validateId, couponController.getCouponByID);
 //router.delete("/:id", validateId, couponController.deleteCoupon); delete is handeled by the server when the coupon expires, users are not allowed to delete coupons since we dont have a user system
-
 router.patch("/:id", validateId, couponController.patchCoupon);
 
 module.exports = router;
