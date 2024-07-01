@@ -24,7 +24,6 @@ const bucketName =
 const storage = multerS3({
   s3: s3,
   bucket: bucketName,
-  acl: "public-read", // oder 'private', je nach Bedarf
   metadata: (req, file, cb) => {
     cb(null, { fieldName: file.fieldname });
   },
