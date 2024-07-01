@@ -6,7 +6,7 @@ const multerS3 = require("multer-s3");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
 
-//aws config for s3 bucket with multer
+// AWS-Konfiguration für S3-Bucket mit Multer
 aws.config.update({
   accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.BUCKETEER_AWS_SECRET_ACCESS_KEY,
@@ -17,11 +17,14 @@ aws.config.update({
 const s3 = new aws.S3();
 
 // Konfiguriere S3-Speicher für Multer
-console.log("Bucket Name:", "bucketeer-f7437b40-31ed-48d6-bfa6-a7e71787b537");
+const bucketName =
+  process.env.BUCKETEER_BUCKET_NAME ||
+  "bucketeer-f7437b40-31ed-48d6-bfa6-a7e71787b537";
+console.log("Bucket Name:", bucketName);
 
 const storage = multerS3({
   s3: s3,
-  bucket: "bucketeer-f7437b40-31ed-48d6-bfa6-a7e71787b537",
+  bucket: bucketName,
   acl: "public-read", // oder 'private', je nach Bedarf
   metadata: (req, file, cb) => {
     cb(null, { fieldName: file.fieldname });
@@ -56,7 +59,7 @@ const upload = multer({
   { name: "companyLogo", maxCount: 1 },
 ]);
 
-// Middleware to validate ID
+// Middleware zur Validierung der ID
 const validateId = [
   check("id").isInt().withMessage("ID must be an integer"),
   (req, res, next) => {
@@ -68,7 +71,7 @@ const validateId = [
   },
 ];
 
-// Middleware to validate coupon data for POST and PUT requests
+// Middleware zur Validierung der Gutschein-Daten für POST- und PUT-Anfragen
 const validateCoupon = [
   check("price")
     .isFloat({ min: 0 })
@@ -125,11 +128,12 @@ const validateNearbyCoupon = [
   },
 ];
 
-// Routes for coupon operations using the validation and Multer middleware for file upload
+// Routen für Gutscheinoperationen unter Verwendung der Validierungs- und Multer-Middleware für den Datei-Upload
 router.post(
   "/",
-  [upload, validateCoupon, couponController.createCoupon],
-  function (err, res) {
+  upload,
+  validateCoupon,
+  function (err, req, res, next) {
     if (err instanceof multer.MulterError) {
       return res.status(500).json({
         message: "Multer error: " + err.message,
@@ -137,18 +141,32 @@ router.post(
     } else if (err) {
       return res.status(500).json({ message: "Error: " + err.message });
     }
-  }
+    next();
+  },
+  couponController.createCoupon
 );
 
 router.put(
   "/:id",
-  [upload, ...validateId, ...validateCoupon],
+  upload,
+  validateId,
+  validateCoupon,
+  function (err, req, res, next) {
+    if (err instanceof multer.MulterError) {
+      return res.status(500).json({
+        message: "Multer error: " + err.message,
+      });
+    } else if (err) {
+      return res.status(500).json({ message: "Error: " + err.message });
+    }
+    next();
+  },
   couponController.updateCoupon
 );
 
 router.get("/nearby", validateNearbyCoupon, couponController.findNearbyCoupons);
 router.get("/:id", validateId, couponController.getCouponByID);
-//router.delete("/:id", validateId, couponController.deleteCoupon); delete is handeled by the server when the coupon expires, users are not allowed to delete coupons since we dont have a user system
+//router.delete("/:id", validateId, couponController.deleteCoupon); delete is handled by the server when the coupon expires, users are not allowed to delete coupons since we don't have a user system
 router.patch("/:id", validateId, couponController.patchCoupon);
 
 module.exports = router;
