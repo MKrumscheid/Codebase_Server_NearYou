@@ -20,9 +20,7 @@ const s3 = new S3Client({
 console.log("AWS S3 Client initialized");
 
 // Konfiguriere S3-Speicher für Multer
-const bucketName =
-  process.env.BUCKETEER_BUCKET_NAME ||
-  "bucketeer-43e68ed6-bbb1-4155-8fca-55e871a0588d";
+const bucketName = "bucketeer-43e68ed6-bbb1-4155-8fca-55e871a0588d";
 console.log("Bucket Name:", bucketName);
 
 const storage = multerS3({
@@ -204,7 +202,7 @@ router.get("/file/:key", async (req, res) => {
   });
 
   try {
-    const url = await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL gilt für 1 Stunde
+    const url = await getSignedUrl(s3, command, { expiresIn: 3600 * 24 }); // URL gilt für 24 Stunden
     res.json({ url });
   } catch (err) {
     console.error("Error getting signed URL", err);
