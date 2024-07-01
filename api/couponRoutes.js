@@ -1,23 +1,44 @@
 const express = require("express");
 const multer = require("multer");
+const aws = require("aws-sdk");
+const multerS3 = require("multer-s3");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
+
+//aws config for s3 bucket with multer
+aws.config.update({
+  accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.BUCKETEER_AWS_SECRET_ACCESS_KEY,
+  region: process.env.BUCKETEER_AWS_REGION,
+});
 
 // Create a new router instance for coupon routes
 const router = express.Router();
 
-// Configure storage and file filter for Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
+aws.config.update({
+  accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.BUCKETEER_AWS_SECRET_ACCESS_KEY,
+  region: process.env.BUCKETEER_AWS_REGION,
+});
+
+// Erstelle eine S3-Instanz
+const s3 = new aws.S3();
+
+// Konfiguriere S3-Speicher für Multer
+const storage = multerS3({
+  s3: s3,
+  bucket: process.env.BUCKETEER_BUCKET_NAME,
+  acl: "public-read", // oder 'private', je nach Bedarf
+  metadata: (req, file, cb) => {
+    cb(null, { fieldName: file.fieldname });
   },
-  // Rename the file to include the fieldname and the current date so we have unique filenames
-  filename: (req, file, cb) => {
+  key: (req, file, cb) => {
     const extension = file.originalname.split(".").pop();
     cb(null, `${file.fieldname}-${Date.now()}.${extension}`);
   },
 });
-// File filter to only allow JPEG and PNG files
+
+// Datei-Filter, um nur JPEG- und PNG-Dateien zuzulassen
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
     cb(null, true);
@@ -26,11 +47,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Setting limits: 2MB file size
+// Begrenzungen setzen: 2MB Dateigröße
 const limits = {
   fileSize: 2 * 1024 * 1024,
 };
-// Multer middleware for file upload
+
+// Multer-Middleware für den Datei-Upload
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
