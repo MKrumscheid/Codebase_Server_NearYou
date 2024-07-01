@@ -15,10 +15,13 @@ const s3 = new S3Client({
   },
 });
 
+console.log("AWS S3 Client initialized");
+
 // Konfiguriere S3-Speicher für Multer
 const bucketName =
   process.env.BUCKETEER_BUCKET_NAME ||
   "bucketeer-43e68ed6-bbb1-4155-8fca-55e871a0588d";
+console.log("Bucket Name:", bucketName);
 
 const storage = multerS3({
   s3: s3,
@@ -28,9 +31,13 @@ const storage = multerS3({
   },
   key: (req, file, cb) => {
     const extension = file.originalname.split(".").pop();
-    cb(null, `${file.fieldname}-${Date.now()}.${extension}`);
+    const filename = `${file.fieldname}-${Date.now()}.${extension}`;
+    console.log("Generated Filename:", filename);
+    cb(null, filename);
   },
 });
+
+console.log("Multer S3 storage configured");
 
 // Datei-Filter, um nur JPEG- und PNG-Dateien zuzulassen
 const fileFilter = (req, file, cb) => {
@@ -41,10 +48,14 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+console.log("File filter configured");
+
 // Begrenzungen setzen: 2MB Dateigröße
 const limits = {
   fileSize: 2 * 1024 * 1024,
 };
+
+console.log("File size limit set");
 
 // Multer-Middleware für den Datei-Upload
 const upload = multer({
@@ -55,6 +66,8 @@ const upload = multer({
   { name: "productPhoto", maxCount: 1 },
   { name: "companyLogo", maxCount: 1 },
 ]);
+
+console.log("Multer middleware configured");
 
 // Middleware zur Validierung der ID
 const validateId = [
@@ -128,9 +141,15 @@ const validateNearbyCoupon = [
 // Routen für Gutscheinoperationen unter Verwendung der Validierungs- und Multer-Middleware für den Datei-Upload
 router.post(
   "/",
+  (req, res, next) => {
+    console.log("POST /api/coupons called");
+    next();
+  },
   upload,
   validateCoupon,
   function (req, res, next) {
+    console.log("Request Files:", req.files);
+    console.log("Request Body:", req.body);
     upload(req, res, function (err) {
       if (err instanceof multer.MulterError) {
         console.error("Multer error:", err);
@@ -149,10 +168,16 @@ router.post(
 
 router.put(
   "/:id",
+  (req, res, next) => {
+    console.log(`PUT /api/coupons/${req.params.id} called`);
+    next();
+  },
   upload,
   validateId,
   validateCoupon,
   function (req, res, next) {
+    console.log("Request Files:", req.files);
+    console.log("Request Body:", req.body);
     upload(req, res, function (err) {
       if (err instanceof multer.MulterError) {
         console.error("Multer error:", err);
@@ -173,5 +198,7 @@ router.get("/nearby", validateNearbyCoupon, couponController.findNearbyCoupons);
 router.get("/:id", validateId, couponController.getCouponByID);
 //router.delete("/:id", validateId, couponController.deleteCoupon); delete is handled by the server when the coupon expires, users are not allowed to delete coupons since we don't have a user system
 router.patch("/:id", validateId, couponController.patchCoupon);
+
+console.log("Routes configured");
 
 module.exports = router;
