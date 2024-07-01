@@ -16,6 +16,8 @@ aws.config.update({
 const s3 = new aws.S3();
 
 // Konfiguriere S3-Speicher für Multer
+console.log("Bucket Name:", process.env.BUCKETEER_BUCKET_NAME);
+
 const storage = multerS3({
   s3: s3,
   bucket: process.env.BUCKETEER_BUCKET_NAME,
