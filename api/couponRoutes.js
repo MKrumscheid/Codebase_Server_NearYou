@@ -32,6 +32,7 @@ const storage = multerS3({
     cb(null, `${file.fieldname}-${Date.now()}.${extension}`);
   },
 });
+
 // Datei-Filter, um nur JPEG- und PNG-Dateien zuzulassen
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
@@ -40,6 +41,7 @@ const fileFilter = (req, file, cb) => {
     cb(new Error("Only JPEG and PNG files are allowed!"), false);
   }
 };
+
 // Begrenzungen setzen: 2MB Dateigröße
 const limits = {
   fileSize: 2 * 1024 * 1024,
@@ -130,8 +132,6 @@ router.post(
   upload,
   validateCoupon,
   function (req, res, next) {
-    console.log("Files:", req.files);
-    console.log("Body:", req.body);
     upload(req, res, function (err) {
       if (err instanceof multer.MulterError) {
         console.error("Multer error:", err);
@@ -154,8 +154,6 @@ router.put(
   validateId,
   validateCoupon,
   function (req, res, next) {
-    console.log("Files:", req.files);
-    console.log("Body:", req.body);
     upload(req, res, function (err) {
       if (err instanceof multer.MulterError) {
         console.error("Multer error:", err);
