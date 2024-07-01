@@ -1,20 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const aws = require("aws-sdk");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const multerS3 = require("multer-s3");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
 
 // AWS-Konfiguration für S3-Bucket mit Multer
-aws.config.update({
-  accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.BUCKETEER_AWS_SECRET_ACCESS_KEY,
+const s3 = new S3Client({
   region: process.env.BUCKETEER_AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.BUCKETEER_AWS_SECRET_ACCESS_KEY,
+  },
 });
-
-// Erstelle eine S3-Instanz
-const s3 = new aws.S3();
 
 // Konfiguriere S3-Speicher für Multer
 const bucketName =
