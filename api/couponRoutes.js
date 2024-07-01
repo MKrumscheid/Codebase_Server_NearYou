@@ -12,15 +12,6 @@ aws.config.update({
   region: process.env.BUCKETEER_AWS_REGION,
 });
 
-// Create a new router instance for coupon routes
-const router = express.Router();
-
-aws.config.update({
-  accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.BUCKETEER_AWS_SECRET_ACCESS_KEY,
-  region: process.env.BUCKETEER_AWS_REGION,
-});
-
 // Erstelle eine S3-Instanz
 const s3 = new aws.S3();
 
