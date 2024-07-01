@@ -6,6 +6,10 @@ const multerS3 = require("multer-s3");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
 
+var bodyParser = require("body-parser");
+
+bodyParser.json([options]);
+
 // AWS-Konfiguration für S3-Bucket mit Multer
 aws.config.update({
   accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
