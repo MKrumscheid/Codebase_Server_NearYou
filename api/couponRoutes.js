@@ -129,6 +129,11 @@ const validateNearbyCoupon = [
 // Routen für Gutscheinoperationen unter Verwendung der Validierungs- und Multer-Middleware für den Datei-Upload
 router.post(
   "/",
+  (req, res, next) => {
+    console.log("Files:", req.files);
+    console.log("Body:", req.body);
+    next();
+  },
   upload,
   validateCoupon,
   function (req, res, next) {
@@ -150,6 +155,11 @@ router.post(
 
 router.put(
   "/:id",
+  (req, res, next) => {
+    console.log("Files:", req.files);
+    console.log("Body:", req.body);
+    next();
+  },
   upload,
   validateId,
   validateCoupon,
