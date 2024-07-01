@@ -20,7 +20,6 @@ const s3 = new aws.S3();
 const bucketName =
   process.env.BUCKETEER_BUCKET_NAME ||
   "bucketeer-f7437b40-31ed-48d6-bfa6-a7e71787b537";
-console.log("Bucket Name:", bucketName);
 
 const storage = multerS3({
   s3: s3,
