@@ -91,7 +91,9 @@ async function fetchAndReturnNearbyCoupons(
 exports.createCoupon = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
-    console.log(req.body.jsonData); //for debugging purposes
+    console.log("Request body:", req.body); // for debugging purposes
+    console.log("Files:", req.files); // for debugging purposes
+
     const {
       productCategory,
       validity,
@@ -103,11 +105,13 @@ exports.createCoupon = async (req, res, next) => {
       product,
       quantity,
     } = req.body; //destructure the body of the request
-    const productPhoto = req.files?.productPhoto //check if there is a file in the request
-      ? req.files.productPhoto[0].path
-      : null; //for now we allow no image to be uploaded, but later we should use a placeholder image, which's path would be here instead of null
+
+    const productPhoto = req.files?.productPhoto
+      ? req.files.productPhoto[0].location // updated to use location from S3
+      : null;
+
     const companyLogo = req.files?.companyLogo
-      ? req.files.companyLogo[0].path
+      ? req.files.companyLogo[0].location // updated to use location from S3
       : null;
 
     // Create the new coupon in the database
@@ -164,10 +168,10 @@ exports.updateCoupon = async (req, res) => {
       quantity,
     } = req.body.jsonData;
     const productPhoto = req.files?.productPhoto
-      ? req.files.productPhoto[0].path
+      ? req.files.productPhoto[0].location // updated to use location from S3
       : null;
     const companyLogo = req.files?.companyLogo
-      ? req.files.companyLogo[0].path
+      ? req.files.companyLogo[0].location // updated to use location from S3
       : null;
 
     const updatedFields = {
@@ -263,6 +267,6 @@ exports.patchCoupon = async (req, res) => {
 
 exports.findNearbyCoupons = async (req, res) => {
   const { latitude, longitude, distance = 500 } = req.query;
-  console.log(latitude, latitude, distance);
+  console.log(latitude, longitude, distance); // fixed typo here
   await fetchAndReturnNearbyCoupons(res, latitude, longitude, distance);
 };
