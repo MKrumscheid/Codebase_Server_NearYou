@@ -16,11 +16,11 @@ aws.config.update({
 const s3 = new aws.S3();
 
 // Konfiguriere S3-Speicher für Multer
-console.log("Bucket Name:", process.env.BUCKETEER_BUCKET_NAME);
+console.log("Bucket Name:", "bucketeer-f7437b40-31ed-48d6-bfa6-a7e71787b537");
 
 const storage = multerS3({
   s3: s3,
-  bucket: process.env.BUCKETEER_BUCKET_NAME,
+  bucket: "bucketeer-f7437b40-31ed-48d6-bfa6-a7e71787b537",
   acl: "public-read", // oder 'private', je nach Bedarf
   metadata: (req, file, cb) => {
     cb(null, { fieldName: file.fieldname });
