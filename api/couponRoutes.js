@@ -133,15 +133,19 @@ router.post(
   "/",
   upload,
   validateCoupon,
-  function (err, req, res, next) {
-    if (err instanceof multer.MulterError) {
-      return res.status(500).json({
-        message: "Multer error: " + err.message,
-      });
-    } else if (err) {
-      return res.status(500).json({ message: "Error: " + err.message });
-    }
-    next();
+  function (req, res, next) {
+    upload(req, res, function (err) {
+      if (err instanceof multer.MulterError) {
+        console.error("Multer error:", err);
+        return res.status(500).json({
+          message: "Multer error: " + err.message,
+        });
+      } else if (err) {
+        console.error("Error:", err);
+        return res.status(500).json({ message: "Error: " + err.message });
+      }
+      next();
+    });
   },
   couponController.createCoupon
 );
@@ -151,15 +155,19 @@ router.put(
   upload,
   validateId,
   validateCoupon,
-  function (err, req, res, next) {
-    if (err instanceof multer.MulterError) {
-      return res.status(500).json({
-        message: "Multer error: " + err.message,
-      });
-    } else if (err) {
-      return res.status(500).json({ message: "Error: " + err.message });
-    }
-    next();
+  function (req, res, next) {
+    upload(req, res, function (err) {
+      if (err instanceof multer.MulterError) {
+        console.error("Multer error:", err);
+        return res.status(500).json({
+          message: "Multer error: " + err.message,
+        });
+      } else if (err) {
+        console.error("Error:", err);
+        return res.status(500).json({ message: "Error: " + err.message });
+      }
+      next();
+    });
   },
   couponController.updateCoupon
 );
