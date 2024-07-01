@@ -5,10 +5,9 @@ const aws = require("aws-sdk");
 const multerS3 = require("multer-s3");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
+const bodyParser = require("body-parser");
 
-var bodyParser = require("body-parser");
-
-bodyParser.json([options]);
+router.use(bodyParser.urlencoded({ extended: false }));
 
 // AWS-Konfiguration für S3-Bucket mit Multer
 aws.config.update({
