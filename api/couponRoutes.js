@@ -19,7 +19,7 @@ const s3 = new aws.S3();
 // Konfiguriere S3-Speicher für Multer
 const bucketName =
   process.env.BUCKETEER_BUCKET_NAME ||
-  "bucketeer-f7437b40-31ed-48d6-bfa6-a7e71787b537";
+  "bucketeer-43e68ed6-bbb1-4155-8fca-55e871a0588d";
 
 const storage = multerS3({
   s3: s3,
