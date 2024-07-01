@@ -32,7 +32,6 @@ const storage = multerS3({
     cb(null, `${file.fieldname}-${Date.now()}.${extension}`);
   },
 });
-
 // Datei-Filter, um nur JPEG- und PNG-Dateien zuzulassen
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
@@ -41,7 +40,6 @@ const fileFilter = (req, file, cb) => {
     cb(new Error("Only JPEG and PNG files are allowed!"), false);
   }
 };
-
 // Begrenzungen setzen: 2MB Dateigröße
 const limits = {
   fileSize: 2 * 1024 * 1024,
