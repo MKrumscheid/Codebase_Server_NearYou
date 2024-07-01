@@ -5,6 +5,8 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const multerS3 = require("multer-s3");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 // AWS-Konfiguration für S3-Bucket mit Multer
 const s3 = new S3Client({
@@ -193,7 +195,22 @@ router.put(
   },
   couponController.updateCoupon
 );
+router.get("/file/:key", async (req, res) => {
+  const { key } = req.params;
 
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+  });
+
+  try {
+    const url = await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL gilt für 1 Stunde
+    res.json({ url });
+  } catch (err) {
+    console.error("Error getting signed URL", err);
+    res.status(500).json({ message: "Error getting signed URL" });
+  }
+});
 router.get("/nearby", validateNearbyCoupon, couponController.findNearbyCoupons);
 router.get("/:id", validateId, couponController.getCouponByID);
 //router.delete("/:id", validateId, couponController.deleteCoupon); delete is handled by the server when the coupon expires, users are not allowed to delete coupons since we don't have a user system

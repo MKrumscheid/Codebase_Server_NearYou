@@ -8,14 +8,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json());
-//For testing purposes, we allow all origins
 app.use(cors());
-app.use("/uploads", express.static("uploads")); //to acces the uploaded images on the server under the /uploads path
 
-// Routes
-app.use("/api/coupons", couponRoutes);
+// Routes that do not handle file uploads
+app.use(express.json());
 app.use("/api/messages", messageRoutes);
+
+// Routes that handle file uploads (Multer will handle the body)
+app.use("/api/coupons", couponRoutes);
 
 // Setup database and start server
 setupDatabase()
