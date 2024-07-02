@@ -1,7 +1,23 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Coupon = require("../models/Coupon");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} = require("@aws-sdk/client-s3");
 const Op = Sequelize.Op;
+
+const s3 = new S3Client({
+  region: process.env.BUCKETEER_AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.BUCKETEER_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.BUCKETEER_AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+const bucketName = "bucketeer-43e68ed6-bbb1-4155-8fca-55e871a0588d";
 
 // Utility functions
 function isValidLatitude(lat) {
@@ -91,9 +107,7 @@ async function fetchAndReturnNearbyCoupons(
 exports.createCoupon = async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
-    console.log("Request body:", req.body); // for debugging purposes
-    console.log("Files:", req.files); // for debugging purposes
-
+    console.log(req.body.jsonData); //for debugging purposes
     const {
       productCategory,
       validity,
@@ -105,14 +119,8 @@ exports.createCoupon = async (req, res, next) => {
       product,
       quantity,
     } = req.body; //destructure the body of the request
-
-    const productPhoto = req.files?.productPhoto
-      ? req.files.productPhoto[0].location // updated to use location from S3
-      : null;
-
-    const companyLogo = req.files?.companyLogo
-      ? req.files.companyLogo[0].location // updated to use location from S3
-      : null;
+    const productPhoto = req.body.productPhoto;
+    const companyLogo = req.body.companyLogo;
 
     // Create the new coupon in the database
     const newCoupon = await Coupon.create(
@@ -134,9 +142,33 @@ exports.createCoupon = async (req, res, next) => {
     );
 
     await transaction.commit();
-    res
-      .status(201)
-      .send({ message: `Created Coupon with ID ${newCoupon.id} successfully` });
+
+    const productPhotoUrl = await getSignedUrl(
+      s3,
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: productPhoto,
+      }),
+      { expiresIn: 3600 * 24 }
+    );
+
+    const companyLogoUrl = await getSignedUrl(
+      s3,
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: companyLogo,
+      }),
+      { expiresIn: 3600 * 24 }
+    );
+
+    res.status(201).send({
+      message: `Created Coupon with ID ${newCoupon.id} successfully`,
+      coupon: {
+        ...newCoupon.toJSON(),
+        productPhotoUrl,
+        companyLogoUrl,
+      },
+    });
   } catch (error) {
     if (transaction.finished !== "commit") {
       // Rollback only if the transaction hasn't been committed
@@ -167,12 +199,8 @@ exports.updateCoupon = async (req, res) => {
       expiration,
       quantity,
     } = req.body.jsonData;
-    const productPhoto = req.files?.productPhoto
-      ? req.files.productPhoto[0].location // updated to use location from S3
-      : null;
-    const companyLogo = req.files?.companyLogo
-      ? req.files.companyLogo[0].location // updated to use location from S3
-      : null;
+    const productPhoto = req.body.productPhoto;
+    const companyLogo = req.body.companyLogo;
 
     const updatedFields = {
       productCategory,
@@ -267,6 +295,6 @@ exports.patchCoupon = async (req, res) => {
 
 exports.findNearbyCoupons = async (req, res) => {
   const { latitude, longitude, distance = 500 } = req.query;
-  console.log(latitude, longitude, distance); // fixed typo here
+  console.log(latitude, latitude, distance);
   await fetchAndReturnNearbyCoupons(res, latitude, longitude, distance);
 };
