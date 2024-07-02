@@ -1,36 +1,49 @@
-const { Sequelize, DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
 const Message = require("../models/Message");
+const { Sequelize, DataTypes } = require("sequelize");
 const Op = Sequelize.Op;
+const sequelize = require("../config/database");
 
-// Utility functions
-function isValidLatitude(lat) {
-  return lat >= -90 && lat <= 90;
-}
+// Remove expired messages
+const handleExpiredMessages = async (transaction) => {
+  await Message.destroy({
+    where: {
+      expiration: { [Op.lt]: new Date() },
+    },
+    transaction,
+  });
+};
 
-function isValidLongitude(lon) {
-  return lon >= -180 && lon <= 180;
-}
+exports.createMessage = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { content, latitude, longitude } = req.body;
+    console.log(content, latitude, longitude);
+    const newMessage = await Message.create(
+      {
+        content: content,
+        location: sequelize.fn("ST_MakePoint", longitude, latitude),
+        expiration: new Date(new Date().getTime() + 15 * 60000),
+      },
+      { transaction }
+    );
 
-function isValidDistance(distance) {
-  return distance >= 50 && distance <= 5000;
-}
-
-//Method to get all messages within the user specified distance
-exports.findNearbyMessages = async (req, res) => {
-  const { latitude, longitude, distance = 500 } = req.query;
-  if (
-    !isValidLatitude(latitude) ||
-    !isValidLongitude(longitude) ||
-    !isValidDistance(distance)
-  ) {
-    return res.status(400).send({
-      message:
-        "Invalid input parameters. Please check your position and distance data.",
+    await transaction.commit();
+    res.status(201).json(newMessage);
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({
+      message: "Fehler beim Erstellen der Nachricht",
+      error: error.message,
     });
   }
+};
 
+exports.findNearbyMessages = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
+    const { latitude, longitude } = req.query;
+    await handleExpiredMessages(transaction);
+
     const messages = await Message.findAll({
       where: sequelize.where(
         sequelize.fn(
@@ -42,47 +55,18 @@ exports.findNearbyMessages = async (req, res) => {
           ),
           sequelize.col("location")
         ),
-        { [Op.lte]: parseInt(distance) }
+        { [Op.lte]: 1000 } //messages shall always have a reach of 300 meters for this implementation. lte = less than or equal
       ),
-    });
-    res.send(messages);
-  } catch (error) {
-    console.error("Error finding messages:", error);
-    res.status(500).send({ message: "Error finding messages", error });
-  }
-};
-
-// Method to create a new message
-exports.createMessage = async (req, res, next) => {
-  try {
-    const { content, latitude, longitude } = req.body;
-
-    const newMessage = await Message.create({
-      content,
-      location: sequelize.fn("ST_MakePoint", longitude, latitude),
-      createdAt: new Date(),
+      transaction,
     });
 
-    res.status(201).send(newMessage);
+    await transaction.commit();
+    res.json(messages);
   } catch (error) {
-    console.error("Error creating message:", error);
-    next(error);
-  }
-};
-
-// Method to delete messages older than 12 hours
-exports.deleteOldMessages = async (req, res) => {
-  const twelveHoursAgo = new Date(new Date().getTime() - 12 * 60 * 60 * 1000);
-
-  try {
-    await Message.destroy({
-      where: {
-        createdAt: { [Op.lt]: twelveHoursAgo },
-      },
+    await transaction.rollback();
+    res.status(500).json({
+      message: "Fehler beim finden von Nachrichten in der Nähe",
+      error: error.message,
     });
-    res.send({ message: "Old messages deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting old messages:", error);
-    res.status(500).send({ message: "Error deleting old messages", error });
   }
 };
