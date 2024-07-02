@@ -1,17 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const { check, validationResult } = require("express-validator");
 const messageController = require("../controllers/messageController");
+const { check, validationResult } = require("express-validator");
 
-// Middleware to validate message data
+// Middleware zur Validierung der Nachrichtendaten
 const validateMessage = [
-  check("content").not().isEmpty().withMessage("Inhalt darf nicht leer sein"),
+  check("content").isString().withMessage("Content must be a valid string"),
   check("latitude")
     .isFloat({ min: -90, max: 90 })
-    .withMessage("Breitengrad muss zwischen -90 und 90 liegen"),
+    .withMessage("Latitude must be between -90 and 90"),
   check("longitude")
     .isFloat({ min: -180, max: 180 })
-    .withMessage("Längengrad muss zwischen -180 und 180 liegen"),
+    .withMessage("Longitude must be between -180 and 180"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -23,7 +23,6 @@ const validateMessage = [
 
 router.get("/nearby", messageController.findNearbyMessages);
 router.post("/", validateMessage, messageController.createMessage);
-
-//router.delete("/:id", validateMessageId, messageController.deleteMessage); since we dont have a user authentification, we dont allow users to delete messages
+router.delete("/old", messageController.deleteOldMessages);
 
 module.exports = router;
