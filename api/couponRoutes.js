@@ -26,21 +26,9 @@ console.log("AWS S3 Client initialized");
 const bucketName = "bucketeer-43e68ed6-bbb1-4155-8fca-55e871a0588d";
 console.log("Bucket Name:", bucketName);
 
-const storage = multerS3({
-  s3: s3,
-  bucket: bucketName,
-  metadata: (req, file, cb) => {
-    cb(null, { fieldName: file.fieldname });
-  },
-  key: (req, file, cb) => {
-    const extension = file.originalname.split(".").pop();
-    const filename = `${file.fieldname}-${Date.now()}.${extension}`;
-    console.log("Generated Filename:", filename);
-    cb(null, filename);
-  },
-});
+const storage = multer.memoryStorage();
 
-console.log("Multer S3 storage configured");
+console.log("Multer memory storage configured");
 
 // Datei-Filter, um nur JPEG- und PNG-Dateien zuzulassen
 const fileFilter = (req, file, cb) => {
@@ -71,6 +59,21 @@ const upload = multer({
 ]);
 
 console.log("Multer middleware configured");
+
+async function uploadToS3(file) {
+  const filename = `${file.fieldname}-${Date.now()}.${file.originalname
+    .split(".")
+    .pop()}`;
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: filename,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  });
+
+  await s3.send(command);
+  return filename;
+}
 
 // Middleware zur Validierung der ID
 const validateId = [
@@ -150,21 +153,25 @@ router.post(
   },
   upload,
   validateCoupon,
-  function (req, res, next) {
+  async function (req, res, next) {
     console.log("Request Files:", req.files);
     console.log("Request Body:", req.body);
-    upload(req, res, function (err) {
-      if (err instanceof multer.MulterError) {
-        console.error("Multer error:", err);
-        return res.status(500).json({
-          message: "Multer error: " + err.message,
-        });
-      } else if (err) {
-        console.error("Error:", err);
-        return res.status(500).json({ message: "Error: " + err.message });
-      }
+    try {
+      const productPhoto = req.files.productPhoto
+        ? await uploadToS3(req.files.productPhoto[0])
+        : null;
+      const companyLogo = req.files.companyLogo
+        ? await uploadToS3(req.files.companyLogo[0])
+        : null;
+      req.body.productPhoto = productPhoto;
+      req.body.companyLogo = companyLogo;
       next();
-    });
+    } catch (err) {
+      console.error("Error uploading to S3:", err);
+      return res.status(500).json({
+        message: "Error uploading to S3: " + err.message,
+      });
+    }
   },
   couponController.createCoupon
 );
@@ -178,21 +185,25 @@ router.put(
   upload,
   validateId,
   validateCoupon,
-  function (req, res, next) {
+  async function (req, res, next) {
     console.log("Request Files:", req.files);
     console.log("Request Body:", req.body);
-    upload(req, res, function (err) {
-      if (err instanceof multer.MulterError) {
-        console.error("Multer error:", err);
-        return res.status(500).json({
-          message: "Multer error: " + err.message,
-        });
-      } else if (err) {
-        console.error("Error:", err);
-        return res.status(500).json({ message: "Error: " + err.message });
-      }
+    try {
+      const productPhoto = req.files.productPhoto
+        ? await uploadToS3(req.files.productPhoto[0])
+        : null;
+      const companyLogo = req.files.companyLogo
+        ? await uploadToS3(req.files.companyLogo[0])
+        : null;
+      req.body.productPhoto = productPhoto;
+      req.body.companyLogo = companyLogo;
       next();
-    });
+    } catch (err) {
+      console.error("Error uploading to S3:", err);
+      return res.status(500).json({
+        message: "Error uploading to S3: " + err.message,
+      });
+    }
   },
   couponController.updateCoupon
 );
