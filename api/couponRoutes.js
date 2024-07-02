@@ -6,6 +6,7 @@ const {
   PutObjectCommand,
   GetObjectCommand,
 } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const multerS3 = require("multer-s3");
 const couponController = require("../controllers/couponController");
 const { check, validationResult } = require("express-validator");
@@ -195,6 +196,7 @@ router.put(
   },
   couponController.updateCoupon
 );
+
 router.get("/file/:key", async (req, res) => {
   const { key } = req.params;
 
@@ -211,6 +213,7 @@ router.get("/file/:key", async (req, res) => {
     res.status(500).json({ message: "Error getting signed URL" });
   }
 });
+
 router.get("/nearby", validateNearbyCoupon, couponController.findNearbyCoupons);
 router.get("/:id", validateId, couponController.getCouponByID);
 //router.delete("/:id", validateId, couponController.deleteCoupon); delete is handled by the server when the coupon expires, users are not allowed to delete coupons since we don't have a user system
