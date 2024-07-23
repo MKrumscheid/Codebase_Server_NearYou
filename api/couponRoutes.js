@@ -43,7 +43,7 @@ console.log("File filter configured");
 
 // Begrenzungen setzen: 2MB Dateigröße
 const limits = {
-  fileSize: 2 * 1024 * 1024,
+  fileSize: 10 * 1024 * 1024,
 };
 
 console.log("File size limit set");
